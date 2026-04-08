@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Foodie Maracay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #FFF8EF;
+    --warm-brown: #3D1F0A;
+    --orange: #E8612C;
+    --orange-light: #F4946B;
+    --gold: #C9922A;
+    --green: #2A6645;
+    --green-light: #4E9E6E;
+    --shadow: 0 4px 20px rgba(61,31,10,0.15);
+    --shadow-lg: 0 8px 40px rgba(61,31,10,0.22);
+  }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--warm-brown);
+  }
+
+  /* ── HEADER ── */
+  #header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    background: var(--warm-brown);
+    padding: 14px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+
+  #header .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #header .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--orange);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  #header .logo-text {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1;
+  }
+
+  #header .logo-sub {
+    font-size: 11px;
+    color: var(--orange-light);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  #header .counter {
+    background: var(--orange);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 20px;
+    padding: 4px 12px;
+    white-space: nowrap;
+  }
+
+  /* ── MAP ── */
+  #map {
+    position: fixed;
+    top: 72px;
+    left: 0; right: 0;
+    bottom: 110px;
+    z-index: 1;
+  }
+
+  /* ── BANNER ── */
+  #banner {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 1000;
+    height: 110px;
+    background: white;
+    border-top: 3px solid var(--cream);
+    box-shadow: 0 -4px 24px rgba(61,31,10,0.12);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .nav-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--orange);
+    background: white;
+    color: var(--orange);
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .nav-btn:active {
+    background: var(--orange);
+    color: white;
+    transform: scale(0.93);
+  }
+
+  #banner-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #banner-index {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  #banner-name {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--warm-brown);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+  }
+
+  #banner-type {
+    font-size: 13px;
+    color: #888;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #banner-dots {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #DDD;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .dot.active {
+    background: var(--orange);
+    width: 18px;
+    border-radius: 3px;
+  }
+
+  /* ── CUSTOM PINS ── */
+  .pin-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease; /* Para que el cambio de tamaño sea suave */
+  }
+
+  .pin-head {
+    width: 24px; height: 24px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+  }
+
+  /* Cuando el usuario aleja mucho el mapa */
+  .pin-small .pin-head {
+    width: 22px; 
+    height: 22px;
+  }
+
+  .pin-small .pin-emoji {
+    font-size: 10px;
+  }
+
+  .pin-small .pin-label {
+    display: none; /* Escondemos el nombre para que no se vea amontonado */
+  }
+
+  .pin-head.active-pin {
+    transform: rotate(-45deg) scale(1.3);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  }
+
+  .pin-emoji {
+    transform: rotate(45deg);
+    font-size: 16px;
+    line-height: 1;
+    transition: font-size 0.2s ease;
+  }
+
+  .pin-label {
+    margin-top: 2px;
+    background: white;
+    color: var(--warm-brown);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 6px;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    border: 1px solid rgba(61,31,10,0.08);
+    transition: opacity 0.2s ease;
+  }
+
+  /* Popup custom */
+  .leaflet-popup-content-wrapper {
+    border-radius: 16px !important;
+    box-shadow: var(--shadow-lg) !important;
+    padding: 0 !important;
+    overflow: hidden;
+    border: none !important;
+  }
+
+  .leaflet-popup-content {
+    margin: 0 !important;
+    width: 240px !important;
+    height: 80px !important;
+  }
+
+  .leaflet-popup-tip-container { display: none; }
+
+  .popup-inner {
+    padding: 24px 28px; /* 24px arriba/abajo y 28px a los lados */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centra todo el contenido */
+    text-align: center;
+  }
+
+  .popup-inner button {
+  margin-top: 12px !important;
+  padding: 8px 16px !important; /* Botón un poco más grande y cómodo */
+  }
+
+  .popup-emoji { font-size: 28px; margin-bottom: 6px; display: block; }
+
+  .popup-name {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--warm-brown);
+    margin-bottom: 2px;
+    line-height: 1.2;
+  }
+
+  .popup-type {
+    font-size: 12px;
+    color: var(--orange);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .popup-address {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+
+  .popup-ig {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #C13584;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  /* Leaflet overrides */
+  .leaflet-control-attribution { display: none !important; }
+  .leaflet-control-zoom {
+    border: none !important;
+    box-shadow: var(--shadow) !important;
+  }
+  .leaflet-control-zoom a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 20px !important;
+    border-radius: 10px !important;
+    color: var(--warm-brown) !important;
+  }
+
+  /* Transition suave del banner */
+  #banner-name, #banner-type, #banner-index {
+    transition: opacity 0.15s ease;
+  }
+
+    .fade-out { opacity: 0; }
+    .fade-in  { opacity: 1; }
+
+    .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    justify-content: center; align-items: center;
+  }
+
+  .modal-content {
+    background: white;
+    width: 90%; max-width: 450px;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-img { width: 100%; height: 200px; object-fit: cover; background: #eee; }
+  .modal-info { padding: 20px; font-family: 'DM Sans', sans-serif; }
+  .modal-info h2 { margin: 0; color: var(--warm-brown); }
+  .menu-section { 
+    margin-top: 20px; padding: 15px; 
+    background: #f9f4f0; border-radius: 12px; border: 1px dashed #d2b48c;
+    text-align: center; color: #888; font-size: 14px;
+  }
+  .close-btn {
+    position: absolute; top: 15px; right: 20px;
+    font-size: 30px; color: white; cursor: pointer; z-index: 10;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+
+  .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 5px;
+  }
+
+  .leaflet-popup-content button:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+  transition: all 0.2s;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">
+    <div class="logo-icon">🍽️</div>
+    <div>
+      <div class="logo-text">Foodie Maracay</div>
+      <div class="logo-sub">Ciudad Jardín · Aragua</div>
+    </div>
+  </div>
+  <div class="counter" id="counter">1 / 13</div>
+</div>
+
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- BANNER -->
+<div id="banner">
+  <button class="nav-btn" id="btn-prev" onclick="navigate(-1)" aria-label="Anterior">&#8249;</button>
+  <div id="banner-content">
+    <div id="banner-index">Restaurante 1 de 13</div>
+    <div id="banner-name">Cargando...</div>
+    <div id="banner-type">–</div>
+  </div>
+  <button class="nav-btn" id="btn-next" onclick="navigate(1)" aria-label="Siguiente">&#8250;</button>
+  <div id="banner-dots"></div>
+</div>
+
+<script>
+const restaurants = [
+
+  {
+    name: "Hotel Pipo Internacional",
+    ig: "@hotelpipo",
+    type: "Hotel & Punto de Referencia",
+    emoji: "🏨",
+    color: "#4A90E2",
+    address: "Av. Principal de El Castaño",
+    lat: 10.3154079,
+    lng: -67.5608198
+  },
+
+  {
+    name: "Pizza Mía",
+    ig: "@pizzamia_ve",
+    type: "Pizzería",
+    emoji: "🍕",
+    color: "#E8612C",
+    address: "El Toro",
+    lat: 10.288611637030026,
+    lng: -67.56529950036891
+  },
+
+  {
+    name: "Bosque Pino Gastrobar",
+    ig: "@bosquepinogastrobar",
+    type: "Gastrobar · Bar & Restaurante",
+    emoji: "🌲",
+    color: "#2A6645",
+    address: "Círculo Militar Las Delicias, Av. Las Delicias",
+    lat: 10.27244,
+    lng: -67.58379
+  },
+
+  {
+    name: "Sushi & Cebiches",
+    ig: "@sushicebiches",
+    type: "Japonesa & Peruana · Sushi Bar",
+    emoji: "🍣",
+    color: "#2980B9",
+    address: "C.C. Unicentro, Las Delicias",
+    lat: 10.27246577029205,
+    lng: -67.58349350401316
+  },
+
+  {
+    name: "Zhuba Restaurant",
+    ig: "@zhubarestaurant",
+    type: "Fusión Asiática · Sushi & Wok",
+    emoji: "🥢",
+    color: "#8E1A4A",
+    address: "Urb. La Floresta, Calle Los Clubes #17",
+    lat: 10.270093187065504,
+    lng: -67.58703887517778
+  },
+
+  {
+    name: "Blend MCY",
+    ig: "@blendmcy",
+    type: "Restaurante & Bar",
+    emoji: "🥤",
+    color: "#7B3FB5",
+    address: "Las Delicias, Maracay",
+    lat: 10.269485625406714,
+    lng: -67.58762169896941
+  },
+
+  {
+    name: "Pizza y Algo Más",
+    ig: "@pizzayalgomas.ve",
+    type: "Pizzería · Cannoli & Pasticho",
+    emoji: "🫕",
+    color: "#1A6B3C",
+    address: "Urb. La Floresta, Las Delicias",
+    lat: 10.267324201020422,
+    lng: -67.5911518193549
+  },
+
+  {
+    name: "Las Terrazas del Vroster",
+    ig: "@lasterrazasvr",
+    type: "Pollo Broaster & Parrilla",
+    emoji: "🍗",
+    color: "#D4A017",
+    address: "Av. Las Delicias, Maracay",
+    lat: 10.261607520579098,
+    lng: -67.58947111565878
+  },
+
+  {
+    name: "Quiero Galleta",
+    ig: "@quierogalleta_",
+    type: "Postres & Café · Galletas Artesanales",
+    emoji: "🍪",
+    color: "#8B5E3C",
+    address: "C.C. Regional / C.C. Unicentro, Maracay",
+    lat: 10.261168120221338,
+    lng: -67.58966581750695
+  },
+
+  {
+    name: "La Mansión de New York",
+    ig: "@lamansiondenewyork",
+    type: "Panadería, Pastelería & Restaurante",
+    emoji: "🥐",
+    color: "#B5472A",
+    address: "Urb. La Soledad, Av. Central, Edif. 5 Local 1",
+    lat: 10.26121722831808,
+    lng: -67.5922486002784
+  },
+
+
+  {
+    name: "Mr. Wood Restaurant",
+    ig: "@mrwoodrestaurant.mcy",
+    type: "Café & Brunch · Market Restaurant",
+    emoji: "🪵",
+    color: "#5C3D11",
+    address: "Edif. Zimbul, L12, Calle Turpial, La Soledad",
+    lat: 10.260815213477217,
+    lng: -67.59250797779077
+  },
+
+  {
+    name: "Tu Plato",
+    ig: "@tuplato_",
+    type: "Hamburguesas & Milanesas",
+    emoji: "🍔",
+    color: "#C9922A",
+    address: "C.C. Regional, Av. Las Delicias",
+    lat: 10.260153792669813,
+    lng: -67.59140873284875
+  },
+
+  {
+    name: "Pork's Grill",
+    ig: "@porksgrill",
+    type: "Parrilla & Comida Venezolana",
+    emoji: "🔥",
+    color: "#C0392B",
+    address: "Av. 5, Urb. La Soledad / Av. Intersan",
+    lat: 10.259324077496705,
+    lng: -67.59296226168426
+  },
+ 
+  {
+    name: "McDonald's",
+    ig: "@mcdonalds_ve",
+    type: "Comida Rápida",
+    emoji: "🍟",
+    color: "#FFC72C",
+    address: "Av. Las Delicias con Av. Casanova Godoy",
+    lat: 10.257892624007356,
+    lng: -67.59236018390847
+  }
+
+];
+
+let currentIndex = 0;
+let markers = [];
+let map;
+
+// ── INIT MAP ──
+map = L.map('map', {
+  center: [10.2598, -67.5955],
+  zoom: 15,
+  zoomControl: true,
+  attributionControl: false,
+  tap: true
+});
+
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Esri World Imagery'
+}).addTo(map);
+
+// Posicionar zoom abajo a la derecha
+map.zoomControl.setPosition('bottomright');
+
+// ── BUILD DOTS ──
+const dotsContainer = document.getElementById('banner-dots');
+restaurants.forEach((_, i) => {
+  const dot = document.createElement('div');
+  dot.className = 'dot' + (i === 0 ? ' active' : '');
+  dot.onclick = () => goTo(i);
+  dotsContainer.appendChild(dot);
+});
+
+// ── CREATE MARKERS ──
+restaurants.forEach((r, i) => {
+  const iconHtml = `
+    <div class="pin-container" id="pin-${i}">
+      <div class="pin-head ${i === 0 ? 'active-pin' : ''}" style="background:${r.color}">
+        <span class="pin-emoji">${r.emoji}</span>
+      </div>
+      <div class="pin-label">${r.name}</div>
+    </div>`;
+
+  const icon = L.divIcon({
+    html: iconHtml,
+    className: '',
+    iconSize: [70, 45],
+    iconAnchor: [35, 30],
+    popupAnchor: [0, -30]
+  });
+
+  console.log(`Dibujando PIN para: ${r.name} en ${r.lat}, ${r.lng}`);
+  const marker = L.marker([r.lat, r.lng], { icon }).addTo(map);
+
+  const popupHtml = `
+    <div class="popup-inner">
+      <span class="popup-emoji">${r.emoji}</span>
+      <div class="popup-name">${r.name}</div>
+      <div class="popup-type">${r.type}</div>
+      <div class="popup-address">📍 ${r.address}</div>
+      <a class="popup-ig" href="https://instagram.com/${r.ig.replace('@','')}" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+        ${r.ig}
+      </a>
+    </div>`;
+
+  marker.bindPopup(`
+    <div style="text-align: center; font-family: 'DM Sans', sans-serif;">
+      <strong style="color: var(--warm-brown); font-size: 14px;">${r.name}</strong><br>
+      <span style="color: #666; font-size: 12px;">${r.type}</span><br>
+      <button onclick="showDetails(${i})" style="
+        margin-top: 10px;
+        background: var(--warm-brown);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-size: 11px;
+        cursor: pointer;
+        width: auto;
+      ">Ver detalles</button>
+    </div>
+  `);
+
+  marker.on('click', () => {
+    goTo(i);
+  });
+
+  markers.push(marker);
+});
+
+// ── NAVIGATION ──
+function goTo(index) {
+  // fade out
+  const name = document.getElementById('banner-name');
+  const type = document.getElementById('banner-type');
+  const idx  = document.getElementById('banner-index');
+  name.classList.add('fade-out');
+  type.classList.add('fade-out');
+  idx.classList.add('fade-out');
+
+  // remove active from old pin
+  const oldPin = document.getElementById(`pin-${currentIndex}`);
+  if (oldPin) {
+    const head = oldPin.querySelector('.pin-head');
+    if (head) head.classList.remove('active-pin');
+  }
+
+  currentIndex = ((index % restaurants.length) + restaurants.length) % restaurants.length;
+  const r = restaurants[currentIndex];
+
+  setTimeout(() => {
+    // update banner
+    name.textContent = r.name;
+    type.textContent = r.type;
+    idx.textContent  = `Restaurante ${currentIndex + 1} de ${restaurants.length}`;
+    document.getElementById('counter').textContent = `${currentIndex + 1} / ${restaurants.length}`;
+
+    name.classList.remove('fade-out');
+    type.classList.remove('fade-out');
+    idx.classList.remove('fade-out');
+
+    // update dots
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i === currentIndex);
+    });
+
+    // activate pin
+    const newPin = document.getElementById(`pin-${currentIndex}`);
+    if (newPin) {
+      const head = newPin.querySelector('.pin-head');
+      if (head) head.classList.add('active-pin');
+    }
+
+    // fly map
+    map.flyTo([r.lat, r.lng], 16, { duration: 0.8, easeLinearity: 0.5 });
+
+    // open popup
+    markers[currentIndex].openPopup();
+  }, 120);
+}
+
+function navigate(dir) {
+  goTo(currentIndex + dir);
+}
+
+// ── INIT ──
+goTo(0);
+
+// Touch swipe on banner
+let touchStartX = 0;
+document.getElementById('banner').addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].screenX;
+}, { passive: true });
+document.getElementById('banner').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].screenX - touchStartX;
+  if (Math.abs(dx) > 40) navigate(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+function showDetails(index) {
+  map.closePopup();
+  const r = restaurants[index];
+  const modal = document.getElementById('details-modal');
+  const body = document.getElementById('modal-body');
+
+  body.innerHTML = `
+    <img src="https://via.placeholder.com/450x250?text=${r.name}" class="modal-img">
+    <div class="modal-info">
+      <h2>${r.emoji} ${r.name}</h2>
+      <p style="color: #666; font-size: 14px; margin-top: 5px;">${r.type}</p>
+      <p style="margin-top: 15px;">${r.address}</p>
+      <div class="menu-section">
+        <strong>📖 Menú Digital</strong><br>
+        Próximamente disponible
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('details-modal').style.display = 'none';
+}
+</script>
+
+<div id="details-modal" class="modal-overlay" onclick="closeModal()">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <span class="close-btn" onclick="closeModal()">&times;</span>
+    <div id="modal-body">
+      </div>
+  </div>
+</div>
+
+</body>
+</html>
