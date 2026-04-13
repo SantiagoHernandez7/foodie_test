@@ -587,8 +587,7 @@ const restaurants = [
     color: "#FFC72C",
     address: "Av. Las Delicias con Av. Casanova Godoy",
     lat: 10.257892624007356,
-    lng: -67.59236018390847,
-    image: "/foodieTest/assets/mcdonalds.webp" // <--- Ruta a tu imagen local
+    lng: -67.59236018390847
   }
 
 ];
@@ -755,7 +754,8 @@ function showDetails(index) {
   const body = document.getElementById('modal-body');
 
   body.innerHTML = `
-      ${r.image ? `<img src="${r.image}" class="modal-img" alt="${r.name}">` : ''}
+    ${r.image ? `<img src="${r.image}" class="modal-img" alt="${r.name}">` : ''}
+    <div class="modal-info">
       <h2>${r.emoji} ${r.name}</h2>
       <p style="color: #666; font-size: 14px; margin-top: 5px;">${r.type}</p>
       <p style="margin-top: 15px;">${r.address}</p>
