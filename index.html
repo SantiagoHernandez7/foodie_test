@@ -465,7 +465,7 @@ const restaurants = [
     address: "Círculo Militar Las Delicias, Av. Las Delicias",
     lat: 10.27244,
     lng: -67.58379,
-    image: "https://i.postimg.cc/mD4hCVL4/bosque-Pino.png"
+    image: "https://i.ibb.co/btqMqSv/bosque-Pino.png"
   },
 
   {
@@ -755,7 +755,7 @@ function showDetails(index) {
   const body = document.getElementById('modal-body');
 
   body.innerHTML = `
-      <img src="${r.image}" class="modal-img" alt="${r.name}">
+      ${r.image ? `<img src="${r.image}" class="modal-img" alt="${r.name}">` : ''}
       <h2>${r.emoji} ${r.name}</h2>
       <p style="color: #666; font-size: 14px; margin-top: 5px;">${r.type}</p>
       <p style="margin-top: 15px;">${r.address}</p>
